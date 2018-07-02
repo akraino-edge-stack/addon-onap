@@ -1,0 +1,350 @@
+# Copyright © 2018 AT&T Intellectual Property. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Supported as of Newton
+heat_template_version: 2016-10-14
+
+description: |
+  Heat template to install ONAP prerequisites. Uses IPv4 and DHCP.
+  Must be instantiated as an OpenStack administrator.
+
+parameters:
+  project_admin_role:
+    type: string
+    default: admin
+    description: OpenStack Project Administrator Role
+
+  project_member_role:
+    type: string
+    default: _member_
+    description: OpenStack Project Member Role
+
+  admin_username:
+    type: string
+    default: admin
+    description: OpenStack Administrator Username
+
+  onap_project_name:
+    type: string
+    default: onap
+    description: ONAP Project Name
+
+  onap_username:
+    type: string
+    default: onap
+    description: ONAP Username
+
+  onap_password:
+    type: string
+    hidden: true
+    description: ONAP Password
+
+  public_physical_net_name:
+    type: string
+    default: public 
+    description: Public Physical Net Name
+
+  public_physical_net_provider_name:
+    type: string
+    default: public
+    description: Public Physical Net Type
+
+  public_physical_net_type:
+    type: string
+    default: flat
+    description: Public Physical Net Type
+
+  provider_segmentation_id:
+    type: string
+    default: "50"
+    description: Public Physical Provider Network Segmentation ID 
+
+  public_external_router:
+    type: string
+    default: true
+    description: Public External Router
+
+  public_net_port_security_enabled:
+    type: string
+    default: true
+    description: Public Net Port Security Enabled
+
+  public_net_name:
+    type: string
+    default: providernetwork 
+    description: Public Net Name
+
+  does_public_net_exist:
+    type: string
+    default: "false"
+    description: Check if the public network exists. Ignore if resource exists.
+
+  public_subnet_name:
+    type: string
+    default: providernetwork-subnet
+    description: Public subnet
+
+
+  does_public_subnet_exist:
+    type: string
+    default: "false"
+    description: Check if the public network subnet exists. Ignore if resource exists.
+
+  public_subnet_cidr:
+    type: string
+    description: Public Subnet CIDR Block
+
+  public_subnet_allocation_start:
+    type: string
+    description: Public Subnet Allocation Pool Starting IP Address
+
+  public_subnet_allocation_end:
+    type: string
+    description: Public Subnet Allocation Pool Ending IP Address
+
+  # TODO: Make this a list
+  public_subnet_dns_nameserver:
+    type: string
+    default: 8.8.8.8
+    description: Public Subnet DNS Nameserver
+
+  public_subnet_gateway_ip:
+    type: string
+    description: Public Subnet Gateway IP Address
+
+  openstack_tenant_id:
+    type: string
+    default: onap
+    description: another 1
+
+
+conditions:
+
+  create_public_network: {equals: [{get_param: does_public_net_exist},"false"]}
+  create_subnet: {equals: [{get_param: does_public_subnet_exist}, "false"]}
+
+resources:
+
+  # OS::project_id Supported as of Kilo
+  # port_security_enabled Supported as of Liberty
+  # neutron net-create connexus --shared --provider:physical_network external --provider:network_type vlan
+  public_net:
+    type: OS::Neutron::Net
+#    condition: true
+    condition: create_public_network
+    properties:
+      name: {get_param: public_net_name}
+      port_security_enabled: {get_param: public_net_port_security_enabled}
+      shared: true
+      tenant_id: admin
+      value_specs:
+        "provider:physical_network": {get_param: public_physical_net_provider_name}
+        "provider:network_type": {get_param: public_physical_net_type}
+        "provider:segmentation_id": {get_param: provider_segmentation_id}
+        "router:external": {get_param: public_external_router}
+
+  # OS::project_id Supported as of Kilo
+  # network Supported as of Juno
+  # neutron subnet-create connexus 135.25.50.128/25 --name connexus-net --allocation-pool start=135.25.50.137,end=135.25.50.167 --dns-nameserver 135.37.9.16 --gateway 135.25.50.136
+  public_subnet:
+    type: OS::Neutron::Subnet
+    condition: create_subnet
+    properties:
+      allocation_pools:
+      - start: {get_param: public_subnet_allocation_start}
+        end: {get_param: public_subnet_allocation_end}
+      cidr: {get_param: public_subnet_cidr}
+      dns_nameservers:
+      - {get_param: public_subnet_dns_nameserver}
+      enable_dhcp: true
+      gateway_ip: {get_param: public_subnet_gateway_ip}
+      ip_version: 4
+      name: {get_param: public_subnet_name}
+#         list_join: ['-', [{get_param: public_net_name}, 'subnet']]
+      network: {get_resource: public_net}
+      tenant_id: {get_param: openstack_tenant_id}
+
+  # Supported as of Juno
+  # openstack flavor create --ram 32768 --disk 320 --vcpus 16 --public m1.xxlarge
+  m1_xxlarge_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      disk: 320
+      is_public: true
+      name: m1.xxlarge
+      ram: 32768
+      vcpus: 16
+
+  # Supported as of Juno
+  # openstack flavor create --ram  2048 --disk  20 --vcpus  1 --public x1.small
+  x1_small_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      disk: 20
+      is_public: true
+      name: x1.small
+      ram: 2048
+      vcpus: 1
+
+  # Supported as of Juno
+  # openstack flavor create --ram  4096 --disk  20 --vcpus  2 --public x1.medium
+  x1_medium_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      disk: 20
+      is_public: true
+      name: x1.medium
+      ram: 4096
+      vcpus: 2
+
+  # Supported as of Juno
+  # openstack flavor create --ram  8192 --disk  40 --vcpus  4 --public x1.large
+  x1_large_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      disk: 40
+      is_public: true
+      name: x1.large
+      ram: 8192
+      vcpus: 4
+
+  # Supported as of Juno
+  # openstack flavor create --ram 16384 --disk  80 --vcpus  8 --public x1.xlarge
+  x1_xlarge_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      disk: 80
+      is_public: true
+      name: x1.xlarge
+      ram: 16384
+      vcpus: 8
+
+  # Supported as of Juno
+  # openstack flavor create --ram 32768 --disk 160 --vcpus 16 --public x1.xxlarge
+  x1_xxlarge_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      disk: 160
+      is_public: true
+      name: x1.xxlarge
+      ram: 32768
+      vcpus: 16
+
+  # Supported as of Juno
+  # openstack flavor create --ram 131072 --disk 250 --vcpus 32 --public m1.onap
+  m1_onap_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      disk: 250
+      is_public: true
+      name: m1.onap
+      ram: 131072
+      vcpus: 32
+
+  # Supported as of Juno
+  # openstack flavor create --ram 196608 --disk 500 --vcpus 48 --public x1.onap
+  x1_onap_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      disk: 500
+      is_public: true
+      name: x1.onap
+      ram: 196608
+      vcpus: 48
+
+  # Supported as of Juno
+  # openstack flavor create --ram 245760 --disk 800 --vcpus 54 --public xx1.onap
+  xx1_onap_flavor:
+    type: OS::Nova::Flavor
+    properties:
+      disk: 800
+      is_public: true
+      name: xx1.onap
+      ram: 245760
+      vcpus: 54
+
+
+  # Supported as of Kilo
+  # openstack project create --description 'ONAP Project' --enable onap
+  onap_project:
+    type: OS::Keystone::Project
+    properties:
+      description: ONAP Project
+      enabled: true
+      name: {get_param: onap_project_name}
+
+  # Supported as of Kilo
+  # openstack user create --description 'ONAP User' --project onap --password onap123 --enable onap
+  # openstack role add --project onap --user onap _member_
+  # openstack role add --project onap --user onap admin
+  onap_user:
+    type: OS::Keystone::User
+    properties:
+      default_project: {get_resource: onap_project}
+      description: ONAP User
+      enabled: true
+      name: {get_param: onap_username}
+      password: {get_param: onap_password}
+      roles:
+      - role: {get_param: project_member_role}
+        project: {get_resource: onap_project}
+      - role: {get_param: project_admin_role}
+        project: {get_resource: onap_project}
+
+  # Supported as of Liberty
+  # openstack role add --project onap --user admin _member_
+  admin_onap_member:
+    type: OS::Keystone::UserRoleAssignment
+    properties:
+      roles:
+      - role: {get_param: project_member_role}
+        project: {get_resource: onap_project}
+      user: {get_param: admin_username}
+
+  # Supported as of Ocata
+  # openstack quota set --cores 80 --ram 200000 --instances 20 onap
+  # onap_server_quota:
+  #   type: OS::Nova::Quota
+  #   properties:
+  #     cores: 80
+  #     instances: 20
+  #     ram: 200000
+
+  # Unsupported as of Pike
+  # openstack image create --file ubuntu14_04.qcow2 --disk-format qcow2 --container-format bare --public ubuntu14_04
+  # openstack image create --file ubuntu16_04.qcow2 --disk-format qcow2 --container-format bare --public ubuntu16_04
+  # openstack image create --file CentOS-7-x86_64-GenericCloud.qcow2 --disk-format qcow2 --container-format bare --public centos7
+  
+  #Supported as of Icehouse
+  # This must be done as the onap user
+  # for port in 22 30211 and ICMP
+  # do
+  #   openstack security group rule create $DEFAULT_SECGROUP --ingress --protocol tcp --remote-ip 0.0.0.0/0 --dst-port $port:$port
+  # done
+  #server_security_group:
+  #  type: OS::Neutron::SecurityGroup
+  #  properties:
+  #    description: security group and rules for ONAP user
+  #    name: onap
+  #    rules: [
+  #      {remote_ip_prefix: 0.0.0.0/0,
+  #      protocol: tcp,
+  #      port_range_min: 22,
+  #      port_range_max: 22},
+  #      {remote_ip_prefix: 0.0.0.0/0,
+  #      protocol: tcp,
+  #      port_range_min: 30211,
+  #      port_range_max: 30211},
+  #      {remote_ip_prefix: 0.0.0.0/0,
+  #      protocol: icmp}]

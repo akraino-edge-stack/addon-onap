@@ -1,0 +1,9 @@
+nsPrefix: onap
+pullPolicy: IfNotPresent
+disableDcae: false
+nginx:
+  repository: nginx
+  tag: stable
+heat_bootstrap:
+  repository: ubuntu
+  tag: xenial

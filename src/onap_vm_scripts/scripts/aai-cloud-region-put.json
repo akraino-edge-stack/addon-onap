@@ -1,0 +1,15 @@
+{
+        "cloud-owner": "AEC",
+        "cloud-region-id": "RegionOne",
+        "cloud-region-version": "v2",
+        "cloud-type": "SharedNode",
+        "cloud-zone": "CloudZone",
+        "owner-defined-type": "OwnerType",
+        "tenants": {
+                "tenant": [{
+                        "tenant-id": "ed3d6f6e8ff04ce8944549c16aef8871",
+                        "tenant-name": "onap"
+                }]
+        }
+}
+

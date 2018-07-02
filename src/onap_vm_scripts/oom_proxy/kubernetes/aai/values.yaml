@@ -1,0 +1,34 @@
+nsPrefix: onap
+pullPolicy: IfNotPresent
+nodePortPrefix: 302
+
+# POLICY hotfix - Note this must be temporary
+# See https://jira.onap.org/browse/POLICY-510
+
+#aaiServiceClusterIp: 10.43.255.254
+aaiServiceClusterIp: 10.96.0.254
+
+#aaiServiceClusterIp: 192.168.0.254
+
+image:
+  readiness: oomk8s/readiness-check:1.0.1
+  aaiProxy: aaionap/haproxy
+  aaiProxyVersion: 1.1.0
+  aaiHbaseImage: aaionap/hbase
+  aaiHbaseVersion: 1.2.0
+  modelLoaderImage: nexus3.onap.org:10001/onap/model-loader
+  modelLoaderVersion: v1.1.0
+  aaiResourcesImage: nexus3.onap.org:10001/openecomp/aai-resources
+  aaiResourcesVersion: v1.1.0
+  aaiTraversalImage: nexus3.onap.org:10001/openecomp/aai-traversal
+  aaiTraversalVersion: v1.1.0
+  dataRouterImage: nexus3.onap.org:10001/onap/data-router
+  dataRouterVersion: v1.1.0
+  elasticsearchImage: elasticsearch
+  elasticsearchVersion: 2.4.1
+  searchDataImage: nexus3.onap.org:10001/onap/search-data-service
+  searchDataVersion: v1.1.0
+  sparkyBeImage: nexus3.onap.org:10001/onap/sparky-be
+  sparkyBeVersion: v1.1.0
+  gremlinServerImage: aaionap/gremlin-server
+  filebeat: docker.elastic.co/beats/filebeat:5.5.0

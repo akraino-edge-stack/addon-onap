@@ -1,0 +1,182 @@
+#{{ if not .Values.disableSdcSdcBe }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: sdc-be
+  name: sdc-be
+  namespace: "{{ .Values.nsPrefix }}-sdc"
+spec:
+  selector:
+    matchLabels:
+      app: sdc-be
+  template:
+    metadata:
+      labels:
+        app: sdc-be
+      name: sdc-be
+#      annotations:
+#        pod.beta.kubernetes.io/init-containers: '[
+#          {
+#              "name": "sdc-cs-dns-readiness",
+#              "image": "infoblox/dnstools:latest",
+#              "imagePullPolicy": "{{ .Values.pullPolicy }}",
+#              "command": ["sh", "-c", "echo \"waiting for sdc-cs\"; while true; do; result=\$(host sdc-cs.onap-sdc | grep \"not found\"); if [ -z result ]; then; exit 0; fi; echo \"Waitting for SDC-CS.ONAP-SDC to be ready in DNS.\"; sleep 1; done;"]
+#          },
+#          {
+#              "name": "sdc-es-dns-readiness",
+#              "image": "infoblox/dnstools:latest",
+#              "imagePullPolicy": "{{ .Values.pullPolicy }}",
+#              "command": ["sh", "-c", "echo \"waiting for sdc-es\"; while true; do; result=\$(host sdc-es.onap-sdc | grep \"not found\"); if [ -z result ]; then; exit 0; fi; echo \"Waitting for SDC-ES.ONAP-SDC to be ready in DNS.\"; sleep 1; done;"]
+#          },
+#          {
+#              "args": [
+#                  "--container-name",
+#                  "sdc-es",
+#                  "--container-name",
+#                  "sdc-cs",
+#                  "--container-name",
+#                  "sdc-kb"
+#              ],
+#              "command": [
+#                  "/root/ready.py"
+#              ],
+#              "env": [
+#                  {
+#                      "name": "NAMESPACE",
+#                      "valueFrom": {
+#                          "fieldRef": {
+#                              "apiVersion": "v1",
+#                              "fieldPath": "metadata.namespace"
+#                          }
+#                      }
+#                  }
+#              ],
+#              "image": "{{ .Values.image.readiness }}",
+#              "imagePullPolicy": "{{ .Values.pullPolicy }}",
+#              "name": "sdc-be-readiness"
+#          },
+#          {
+#              "args": [
+#                  "--container-name",
+#                  "dmaap"
+#              ],
+#              "command": [
+#                  "/root/ready.py"
+#              ],
+#              "env": [
+#                  {
+#                      "name": "NAMESPACE",
+#                      "value": "{{ .Values.nsPrefix }}-message-router"
+#                  }
+#              ],
+#              "image": "{{ .Values.image.readiness }}",
+#              "imagePullPolicy": "{{ .Values.pullPolicy }}",
+#              "name": "sdc-dmaap-readiness"
+#          }
+#          ]'
+    spec:
+      initContainers:
+      - name: sdc-dmaap-readiness
+        command: ['sh', '-c', '/root/ready.py --container-name dmaap']
+        env:
+        - name: NAMESPACE
+          value: {{ .Values.nsPrefix }}-message-router
+        image: {{ .Values.image.readiness }}
+        imagePullPolicy: {{ .Values.pullPolicy }}
+        volumeMounts:
+        - mountPath: /root/.kube/config
+          name: kubeconf
+      - name: sdc-be-readiness
+        command: ['sh', '-c', '/root/ready.py --container-name sdc-es --container-name sdc-cs --container-name sdc-kb']
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: {{ .Values.image.readiness }}
+        imagePullPolicy: {{ .Values.pullPolicy }}
+        volumeMounts:
+        - mountPath: /root/.kube/config
+          name: kubeconf
+      containers:
+      - env:
+        - name: ENVNAME
+          value: AUTO
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        command:
+        - /bin/bash
+        - -c
+        - sleep 5m && /root/startup.sh
+#        - echo $(ping sdc-es.onap-sdc -c 1 | grep PING | awk '{ print substr($3,2,length($3)-3) }') sdc-es.onap-sdc >> /etc/hosts && echo $(ping sdc-cs.onap-sdc -c 1 | grep PING | awk '{ print substr($3,2,length($3)-3) }') sdc-cs.onap-sdc >>/etc/hosts && /root/startup.sh
+        image: {{ .Values.image.sdcBackend }}
+        imagePullPolicy: {{ .Values.pullPolicy }}
+        name: sdc-be
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data/
+          name: sdc-sdc-es-es
+        - mountPath: /root/chef-solo/environments/
+          name: sdc-environments
+        - mountPath: /etc/localtime
+          name: sdc-localtime
+          readOnly: true
+        - mountPath: /var/lib/jetty/logs
+          name: sdc-logs
+        - mountPath: /var/log/onap
+          name: sdc-logs-2
+        - mountPath: /tmp/logback.xml
+          name: sdc-logback
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "export LOG=wait_logback.log; touch $LOG; export SRC=/tmp/logback.xml; export DST=/var/lib/jetty/config/catalog-be/; while [ ! -e $DST ]; do echo 'Waiting for $DST...' >> $LOG; sleep 5; done; sleep 2; /bin/cp -f $SRC $DST; echo 'Done' >> $LOG"]
+        ports:
+        - containerPort: 8443
+        - containerPort: 8080
+        readinessProbe:
+          tcpSocket:
+            port: 8443
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      - image: {{ .Values.image.filebeat }}
+        imagePullPolicy: {{ .Values.pullPolicy }}
+        name: filebeat-onap
+        volumeMounts:
+        - mountPath: /usr/share/filebeat/filebeat.yml
+          name: filebeat-conf
+        - mountPath: /var/log/onap
+          name: sdc-logs-2
+        - mountPath: /usr/share/filebeat/data
+          name: sdc-data-filebeat
+      volumes:
+        - name: filebeat-conf
+          hostPath:
+            path: /dockerdata-nfs/{{ .Values.nsPrefix }}/log/filebeat/logback/filebeat.yml
+        - name: sdc-logs-2
+          emptyDir: {}
+        - name: sdc-data-filebeat
+          emptyDir: {}
+        - name: sdc-logback
+          hostPath:
+            path: /dockerdata-nfs/{{ .Values.nsPrefix }}/log/sdc/be/logback.xml
+        - name: sdc-sdc-es-es
+          hostPath:
+            path: /dockerdata-nfs/{{ .Values.nsPrefix }}/sdc/sdc-es/ES
+        - name: sdc-environments
+          hostPath:
+            path: /dockerdata-nfs/{{ .Values.nsPrefix }}/sdc/environments
+        - name: sdc-localtime
+          hostPath:
+            path:  /etc/localtime
+        - name:  sdc-logs
+          hostPath:
+            path:  /dockerdata-nfs/{{ .Values.nsPrefix }}/sdc/logs
+        - name: kubeconf
+          hostPath:
+            path: /root/.kube/config
+      imagePullSecrets:
+      - name: "{{ .Values.nsPrefix }}-docker-registry-key"
+#{{ end }}

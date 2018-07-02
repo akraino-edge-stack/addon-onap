@@ -1,0 +1,103 @@
+#{{ if not .Values.disableMessageRouterDmaap }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dmaap
+  namespace: "{{ .Values.nsPrefix }}-message-router"
+spec:
+  selector:
+    matchLabels:
+      app: dmaap
+  template:
+    metadata:
+      labels:
+        app: dmaap
+      name: dmaap
+#      annotations:
+#        pod.beta.kubernetes.io/init-containers: '[
+#          {
+#              "args": [
+#                  "--container-name",
+#                  "global-kafka",
+#                  "--container-name",
+#                  "zookeeper"
+#              ],
+#              "command": [
+#                  "/root/ready.py"
+#              ],
+#              "env": [
+#                  {
+#                      "name": "NAMESPACE",
+#                      "valueFrom": {
+#                          "fieldRef": {
+#                              "apiVersion": "v1",
+#                              "fieldPath": "metadata.namespace"
+#                          }
+#                      }
+#                  }
+#              ],
+#              "image": "{{ .Values.image.readiness }}",
+#              "imagePullPolicy": "{{ .Values.pullPolicy }}",
+#              "name": "dmaap-readiness"
+#          }
+#          ]'
+    spec:
+      initContainers:
+      - name: dmaap-readiness
+        command: ['sh', '-c', '/root/ready.py --container-name global-kafka --container-name zookeeper']
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: {{ .Values.image.readiness }}
+        imagePullPolicy: {{ .Values.pullPolicy }}
+        volumeMounts:
+        - mountPath: /root/.kube/config
+          name: kubeconf
+      containers:
+      - image: {{ .Values.image.dmaap }}
+        imagePullPolicy: {{ .Values.pullPolicy }}
+        name: dmaap
+        ports:
+        - containerPort: 3904
+        - containerPort: 3905
+        command:
+        - /bin/sh
+        - -c
+        - java -jar  -XX:MaxPermSize=256m -XX:PermSize=32m -DSOACLOUD_SERVICE_VERSION=0.0.1 -DAJSC_HOME=/appl/dmaapMR1 -DAJSC_CONF_HOME=/appl/dmaapMR1/bundleconfig -DAJSC_SHARED_CONFIG=/appl/dmaapMR1/bundleconfig -DAJSC_HTTPS_PORT=3905 -Dplatform=NON-PROD -DPid=1306 -Dlogback.configurationFile=/appl/dmaapMR1/bundleconfig/etc/logback.xml -Djava.net.useSystemProxies=true -Dhttp.proxyHost=--HTTP-PROXY-HOST-GOES-HERE-- -Dhttp.proxyPort=--HTTP-PROXY-PORT-GOES-HERE-- -Dhttps.proxyHost=--HTTP-PROXY-HOST-GOES-HERE-- -Dhttps.proxyPort=--HTTP-PROXY-PORT-GOES-HERE-- -Xmx512m -Xms512m appl/dmaapMR1/lib/ajsc-runner-1.0.0.jar context=/ port=3904 sslport=3905
+        readinessProbe:
+          tcpSocket:
+            port: 3904
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - mountPath: /etc/localtime
+          name: localtime
+          readOnly: true
+        - mountPath: /appl/dmaapMR1/bundleconfig/etc/appprops/MsgRtrApi.properties
+          name: appprops
+        - mountPath: /appl/dmaapMR1/etc/cadi.properties
+          name: cadi
+        - mountPath: /appl/dmaapMR1/etc/keyfile
+          name: mykey
+      restartPolicy: Always
+      volumes:
+      - name: localtime
+        hostPath:
+          path: /etc/localtime
+      - name: appprops
+        hostPath:
+          path: /dockerdata-nfs/{{ .Values.nsPrefix }}/message-router/dmaap/MsgRtrApi.properties
+      - name: cadi
+        hostPath:
+          path: /dockerdata-nfs/{{ .Values.nsPrefix }}/message-router/dmaap/cadi.properties
+      - name: mykey
+        hostPath:
+          path: /dockerdata-nfs/{{ .Values.nsPrefix }}/message-router/dmaap/mykey
+      - name: kubeconf
+        hostPath:
+          path: /root/.kube/config
+      imagePullSecrets:
+      - name: "{{ .Values.nsPrefix }}-docker-registry-key"
+{{ end }}

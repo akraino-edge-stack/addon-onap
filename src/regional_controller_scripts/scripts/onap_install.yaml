@@ -1,0 +1,269 @@
+# Copyright © 2018 AT&T Intellectual Property. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+heat_template_version: 2015-10-15
+
+description: Heat template to install ONAP components
+
+##############
+#            #
+# PARAMETERS #
+#            #
+##############
+
+parameters:
+
+  ##############################################
+  #                                            #
+  # Parameters used across all ONAP components #
+  #                                            #
+  ##############################################
+
+  public_net_id:
+    type: string
+    description: Public network ID for floating IP address allocation
+
+  public_net_name:
+    type: string
+    description: Public network name for floating IP address allocation
+
+  flavor_name:
+    type: string
+    description: Name of the Flavor used to create the OOM VM
+
+  onap_keypair_name:
+    type: string
+    description: Public/Private key pair name
+
+  onap_vm_public_key:
+    type: string
+    description: Public key to be installed on the compute instance
+
+  ubuntu_1604_image:
+    type: string
+    description: Name of the Ubuntu 16.04 image
+
+  ubuntu_1404_image:
+    type: string
+    description: Name of the Ubuntu 14.04 image
+
+  centos_image:
+    type: string
+    description: Name of the centos image
+
+  oam_net_cidr:
+    type: string
+    description: CIDR of the OAM network
+
+  openstack_rc_name:
+    type: string
+    description: OpenStack RC name
+
+  openstack_rc_password:
+    type: string
+    description: OpenStack RC password
+
+  openstack_tenant_name:
+    type: string
+    description: openstack tenant name
+
+  openstack_tenant_id:
+    type: string
+    description: openstack tenant id
+
+  openstack_region:
+    type: string
+    description: openstack region
+
+  keystone_url:
+    type: string
+    description: keystone URL for authentication
+
+  small_flavor_name:
+    type: string
+    description: name of the small flavor
+
+  medium_flavor_name:
+    type: string
+    description: name of the medium flavor
+
+  large_flavor_name:
+    type: string
+    description: name of the large flavor
+
+  openstack_service_tenant_name:
+    type: string
+    description: openstack service tenant name
+
+  openstack_endpoint_ingress_controller:
+    type: string
+    description: openstack endpoint ingress controller
+
+  dmmap_topic_mode:
+    type: string
+    description: message router mode
+
+  demo_artifacts_version:
+    type: string
+    description: ONAP demo artifacts version
+
+  http_proxy:
+    type: string
+    description: http proxy setting
+
+  https_proxy:
+    type: string
+    description: https proxy setting
+
+  no_proxy:
+    type: string
+    description: no proxy setting
+
+  onap_repo:
+    type: string
+    description: repository that host the files necessary for ONAP deployment
+
+
+#############
+#           #
+# RESOURCES #
+#           #
+#############
+
+resources:
+  random-str:
+    type: OS::Heat::RandomString
+    properties:
+      length: 4
+
+
+  # Public key used to access ONAP components
+  vm_key:
+    type: OS::Nova::KeyPair
+    properties:
+      name:
+        str_replace:
+          template: base_rand
+          params:
+            base: { get_param: onap_keypair_name }
+            rand: { get_resource: random-str }
+      public_key: { get_param: onap_vm_public_key }
+      save_private_key: false
+
+  #Scurity group and rules for ONAP VM
+  server_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: security group and rules for ONAP user
+      name: onap
+      rules: [
+        {remote_ip_prefix: 0.0.0.0/0,
+        protocol: tcp,
+        port_range_min: 22,
+        port_range_max: 22},
+        {remote_ip_prefix: 0.0.0.0/0,
+        protocol: tcp,
+        port_range_min: 30211,
+        port_range_max: 30211},
+        {remote_ip_prefix: 0.0.0.0/0,
+        protocol: icmp}]
+
+  # ONAP OOM VM instantiation
+  onap_vm:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: ubuntu_1604_image }
+      flavor: { get_param: flavor_name }
+      name: ONAP
+      key_name: { get_resource: vm_key }
+      networks:
+        - network: { get_param: public_net_id }
+      security_groups:
+        - onap
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __ubuntu_1404_image__: { get_param: ubuntu_1404_image }
+            __ubuntu_1604_image__: { get_param: ubuntu_1604_image }
+            __centos_image__: { get_param: centos_image }
+            __public_net_id__: { get_param: public_net_id }
+            __public_net_name__: { get_param: public_net_name }
+            __oam_net_cidr__: { get_param: oam_net_cidr }
+            __openstack_rc_name__: { get_param: openstack_rc_name }
+            __openstack_rc_password__: { get_param: openstack_rc_password }
+            __openstack_tenant_name__: { get_param: openstack_tenant_name }
+            __openstack_tenant_id__: { get_param: openstack_tenant_id }
+            __openstack_region__: { get_param: openstack_region }
+            __keystone_url__: { get_param: keystone_url }
+            __small_flavor_name__: { get_param: small_flavor_name }
+            __medium_flavor_name__: { get_param: medium_flavor_name }
+            __large_flavor_name__: { get_param: large_flavor_name }
+            __openstack_service_tenant_name__: { get_param: openstack_service_tenant_name }
+            __openstack_endpoint_ingress_controller__: { get_param: openstack_endpoint_ingress_controller }
+            __dmmap_topic_mode__: { get_param: dmmap_topic_mode }
+            __demo_artifacts_version__: { get_param: demo_artifacts_version }
+            __http_proxy__: { get_param: http_proxy }
+            __https_proxy__: { get_param: https_proxy }
+            __no_proxy__: { get_param: no_proxy }
+            __onap_repo__: { get_param: onap_repo }
+
+          template: |
+            #!/bin/bash
+
+
+            # Create configuration files
+            mkdir -p /opt/config
+            echo "__http_proxy__" > /opt/config/http_proxy.txt
+            echo "__https_proxy__" > /opt/config/https_proxy.txt
+            echo "__no_proxy__" > /opt/config/no_proxy.txt
+            echo "__openstack_endpoint_ingress_controller__" > /opt/config/ingress_controller_ip.txt
+            echo "__openstack_tenant_id__" > /opt/config/openstack_tenant_id.txt
+            echo "__ubuntu_1404_image__" > /opt/config/ubuntu_1404_image.txt
+            echo "__ubuntu_1604_image__" > /opt/config/ubuntu_1604_image.txt
+            echo "__centos_image__" > /opt/config/centos_image.txt
+            echo "__public_net_id__" > /opt/config/public_net_id.txt
+            echo "__public_net_name__" > /opt/config/public_net_name.txt
+            echo "__oam_net_cidr__" > /opt/config/oam_net_cidr.txt
+            echo "__openstack_rc_name__" > /opt/config/openstack_rc_name.txt
+            echo "__openstack_rc_password__" > /opt/config/openstack_rc_password.txt
+            echo "__openstack_tenant_name__" > /opt/config/openstack_tenant_name.txt
+            echo "__openstack_region__" > /opt/config/openstack_region.txt
+            echo "__keystone_url__" > /opt/config/keystone_url.txt
+            echo "__small_flavor_name__" > /opt/config/small_flavor_name.txt
+            echo "__medium_flavor_name__" > /opt/config/medium_flavor_name.txt
+            echo "__large_flavor_name__" > /opt/config/large_flavor_name.txt
+            echo "__openstack_service_tenant_name__" > /opt/config/openstack_service_tenant_name.txt
+            echo "__dmmap_topic_mode__" > /opt/config/dmmap_topic_mode.txt
+            echo "__demo_artifacts_version__" > /opt/config/demo_artifacts_version.txt
+            echo "__onap_repo__" > /opt/config/onap_repo.txt
+
+            mkdir -p /opt/onap
+
+
+            # Grab the version of the current ONAP VM build
+            VERSION=$(curl -s http://nexus3.att-akraino.org/repository/maven-public/org/akraino/onap/onap-amsterdam-vm/maven-metadata.xml | grep "<version>" | awk '{ split($1,a,">");split(a[2],b,"<"); print b[1]}')
+ 
+            # Grab the snapshot version
+            SNAPSHOT_VERSION=$(curl -s  http://nexus3.att-akraino.org/repository/maven-public/org/akraino/onap/onap-amsterdam-vm/$VERSION/maven-metadata.xml | grep "<value>" | awk '{ split($1,a,">"); split(a[2],b,"<"); print b[1]}')
+ 
+            # Artifact path
+            ARTIFACT_PATH="http://nexus3.att-akraino.org/repository/maven-public/org/akraino/onap/onap-amsterdam-vm/$VERSION/onap-amsterdam-vm-$SNAPSHOT_VERSION.tar"
+            # Download the newest ONAP VM deployment scripts
+            cd /opt/onap
+            wget $ARTIFACT_PATH
+            tar -xvf *.tar
+
+            chmod +x INSTALL.sh
+            ./INSTALL.sh

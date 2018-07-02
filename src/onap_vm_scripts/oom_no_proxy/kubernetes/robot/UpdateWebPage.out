@@ -1,0 +1,4 @@
+[ WARN ] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.VerifiedHTTPSConnection object at 0x7f4377ffc490>: Failed to establish a new connection: [Errno -2] Name or service not known',)': /v2.0/tokens
+[ WARN ] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.VerifiedHTTPSConnection object at 0x7f4377ffc690>: Failed to establish a new connection: [Errno -2] Name or service not known',)': /v2.0/tokens
+[ WARN ] Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.VerifiedHTTPSConnection object at 0x7f4377ffc210>: Failed to establish a new connection: [Errno -2] Name or service not known',)': /v2.0/tokens
+command terminated with exit code 1

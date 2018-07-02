@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: healthy
+    version: 1.0.0
+  name: healthy
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: healthy
+      version: 1.0.0
+  template:
+    metadata:
+      labels:
+        app: healthy
+        version: 1.0.0
+      name: healthy
+    spec:
+      containers:
+      - args:
+        - --container-name
+        - etcd-onap
+        command:
+        - /root/ready.py
+        image: oomk8s/readiness-check:1.0.1
+        imagePullPolicy: IfNotPresent 
+        name: healthy
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - mountPath: /root/.kube/config
+          name: kubeconf
+      volumes:
+      - name: kubeconf
+        hostPath:
+          path: /root/.kube/config 

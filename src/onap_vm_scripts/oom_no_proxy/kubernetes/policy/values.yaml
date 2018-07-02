@@ -1,0 +1,25 @@
+nsPrefix: onap
+pullPolicy: IfNotPresent
+nodePortPrefix: 302
+
+# POLICY hotfix - Note this must be temporary
+# See https://jira.onap.org/browse/POLICY-510
+
+
+#aaiServiceClusterIp: 10.43.255.254
+aaiServiceClusterIp: 10.96.0.254
+#aaiServiceClusterIp: 192.168.0.254
+
+image:
+  readiness: oomk8s/readiness-check
+  readinessVersion: 1.0.1
+  policyPe: nexus3.onap.org:10001/onap/policy/policy-pe
+  policyPeVersion: v1.1.1
+  policyDrools: nexus3.onap.org:10001/onap/policy/policy-drools
+  policyDroolsVersion: v1.1.1
+  policyDb: nexus3.onap.org:10001/onap/policy/policy-db
+  policyDbVersion: v1.1.1
+  policyNexus: nexus3.onap.org:10001/onap/policy/policy-nexus
+  policyNexusVersion: v1.1.1
+  ubuntu: ubuntu:16.04
+  filebeat: docker.elastic.co/beats/filebeat:5.5.0
