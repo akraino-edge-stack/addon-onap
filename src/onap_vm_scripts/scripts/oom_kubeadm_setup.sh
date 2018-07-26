@@ -134,7 +134,7 @@ logger -s [0%] Waiting for K8S cluster to be ready 2>> $STATUSFILE
 NUMLINE=$(kubectl get pods --all-namespaces | grep -c kube-system)
 READINESS=$(kubectl get pods --all-namespaces | grep -c "0/")
 
-while [ ! $NUMLINE -eq 10 ] || [ ! $READINESS -eq 0 ]; do
+while [ ! $NUMLINE -ge 11 ] || [ ! $READINESS -eq 0 ]; do
     
     kubectl get pods --all-namespaces
 

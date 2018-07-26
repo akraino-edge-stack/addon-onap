@@ -133,6 +133,7 @@ conditions:
 
   create_public_network: {equals: [{get_param: does_public_net_exist},"false"]}
   create_subnet: {equals: [{get_param: does_public_subnet_exist}, "false"]}
+  network_is_vlan: {equals: [{get_param: public_physical_net_type}, "vlan"]}
 
 resources:
 
@@ -148,11 +149,14 @@ resources:
       port_security_enabled: {get_param: public_net_port_security_enabled}
       shared: true
       tenant_id: admin
-      value_specs:
-        "provider:physical_network": {get_param: public_physical_net_provider_name}
-        "provider:network_type": {get_param: public_physical_net_type}
-        "provider:segmentation_id": {get_param: provider_segmentation_id}
-        "router:external": {get_param: public_external_router}
+      value_specs: {if: ["network_is_vlan",
+        {"provider:physical_network": {get_param: public_physical_net_provider_name},
+        "provider:network_type": {get_param: public_physical_net_type},
+        "router:external": {get_param: public_external_router},
+        "provider:segmentation_id": {get_param: provider_segmentation_id}},
+        {"provider:physical_network": {get_param: public_physical_net_provider_name},
+        "provider:network_type": {get_param: public_physical_net_type},
+        "router:external": {get_param: public_external_router}}]}
 
   # OS::project_id Supported as of Kilo
   # network Supported as of Juno

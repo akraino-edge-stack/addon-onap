@@ -21,7 +21,7 @@
 
 
 IDIR=$(pwd)
-CONSULPATCHDIR=$IDIR/consul-patch
+CONSULPATCHDIR=$IDIR/../consul-patch
 STATUSFILE=$IDIR/status-log
 
 logger -s [0%] Deploying ONAP 2>> $STATUSFILE
@@ -118,7 +118,7 @@ cd ../../../scripts/
 
 # usually the prepull takes up to 15 min - however hourly builds will finish the docker pulls before the config pod is finisheed
 echo "verify onap-config is 0/1 not 1/1 - as in completed - an error pod - means you are missing onap-parameters.yaml or values are not set in it."
-while [  $(kubectl get pods -n onap -a | grep config | grep 0/1 | grep Completed | wc -l) -eq 0 ]; do
+while [  $(kubectl get pods -n onap | grep config | grep 0/1 | grep Completed | wc -l) -eq 0 ]; do
     sleep 15
     echo "waiting for config pod to complete"
 done
@@ -140,7 +140,7 @@ cp -r $CONSULPATCHDIR/* /dockerdata-nfs/onap/consul/consul-agent-config/
 #./createAll.bash -n onap
 # workaround for OOM-448 - run independently
 
-
+cd ../oom/kubernetes/oneclick
 ./createAll.bash -n onap -a aai
 ./createAll.bash -n onap -a consul
 ./createAll.bash -n onap -a msb

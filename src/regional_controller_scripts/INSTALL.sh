@@ -139,10 +139,10 @@ os_run.sh -v $IDIR:$IDIR /tmp/INST$$a
 (
         echo set -ex
         cat $ADMIN_RC
-        echo "LOOP=\$(openstack stack list | grep onap_baseline | awk '{print /$6}')"
+        echo "LOOP=\$(openstack stack list | grep onap_baseline | awk '{print \$6}')"
 	echo "while [ \$LOOP == \"CREATE_IN_PROGRESS\" ]; do"
         echo "echo \"Waiting for onap_baseline to be created.\""
-        echo "LOOP=\$(openstack stack list | grep onap_baseline | awk '{print /$6}')" 
+        echo "LOOP=\$(openstack stack list | grep onap_baseline | awk '{print \$6}')" 
         echo done
         echo "echo \$LOOP >> $SCRIPTDIR/temp"
 
