@@ -34,9 +34,12 @@ HEAT2=$SCRIPTDIR/onap_install.yaml
 ENVFILE=$SCRIPTDIR/onap.env
 AAICLOUDREGIONFILE=$SCRIPTDIR/aai-cloud-region-put.json
 STATUSFILE=$IDIR/status-log
+STATUSCODE=$IDIR/status-code
 
 
 logger -s [0%] Creating Openstack project and networks for ONAP 2>> $STATUSFILE
+echo "0" > $STATUSCODE
+
 
 # Need access to the os_run.sh tool
 PATH=$SCRIPTDIR:$PATH
@@ -300,4 +303,5 @@ os_run.sh -v $IDIR:$IDIR /tmp/INST$$d
 # rm -f /tmp/INST$$[abc]
 echo $(date) Done.
 logger -s [0%] ONAP VM is running. 2>> $STATUSFILE
+echo "1" > STATUSCODE
 exit 0

@@ -253,17 +253,17 @@ resources:
 
 
             # Grab the version of the current ONAP VM build
-            VERSION=$(curl -s http://nexus3.att-akraino.org/repository/maven-public/org/akraino/onap/onap-amsterdam-vm/maven-metadata.xml | grep "<version>" | awk '{ split($1,a,">");split(a[2],b,"<"); print b[1]}')
+            VERSION=$(curl -s https://nexus.akraino.org/content/repositories/snapshots/org/akraino/addon-onap/onap-amsterdam-VM-master/maven-metadata.xml | grep "<version>" | awk '{ split($1,a,">");split(a[2],b,"<"); print b[1]}')
  
             # Grab the snapshot version
-            SNAPSHOT_VERSION=$(curl -s  http://nexus3.att-akraino.org/repository/maven-public/org/akraino/onap/onap-amsterdam-vm/$VERSION/maven-metadata.xml | grep "<value>" | awk '{ split($1,a,">"); split(a[2],b,"<"); print b[1]}')
+            SNAPSHOT_VERSION=$(curl -s  https://nexus.akraino.org/content/repositories/snapshots/org/akraino/addon-onap/onap-amsterdam-VM-master/$VERSION/maven-metadata.xml | grep "<value>" | awk 'NR==1{ split($1,a,">"); split(a[2],b,"<"); print b[1]}')
  
             # Artifact path
-            ARTIFACT_PATH="http://nexus3.att-akraino.org/repository/maven-public/org/akraino/onap/onap-amsterdam-vm/$VERSION/onap-amsterdam-vm-$SNAPSHOT_VERSION.tar"
+            ARTIFACT_PATH="https://nexus.akraino.org/content/repositories/snapshots/org/akraino/addon-onap/onap-amsterdam-VM-master/$VERSION/onap-amsterdam-VM-master-$SNAPSHOT_VERSION.tgz"
             # Download the newest ONAP VM deployment scripts
             cd /opt/onap
             wget $ARTIFACT_PATH
-            tar -xvf *.tar
+            tar -xvf *.tgz
 
             chmod +x INSTALL.sh
             ./INSTALL.sh

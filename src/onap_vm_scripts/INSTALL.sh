@@ -29,7 +29,7 @@ echo "127.0.0.1 onap" | tee -a /etc/hosts
 
 
 # Set up Nexus for artifacts that are available in Akraino's repo
-VERSION=$(curl -s http://nexus3.att-akraino.org/repository/maven-public/org/akraino/onap/onap-amsterdam-vm/maven-metadata.xml | grep "<version>" | awk '{ split($1,a,">");split(a[2],b,"<"); print b[1]}')
+#VERSION=$(curl -s http://nexus3.att-akraino.org/repository/maven-public/org/akraino/onap/onap-amsterdam-vm/maven-metadata.xml | grep "<version>" | awk '{ split($1,a,">");split(a[2],b,"<"); print b[1]}')
 
 
 # Disable HTTP repo method
