@@ -303,5 +303,5 @@ os_run.sh -v $IDIR:$IDIR /tmp/INST$$d
 # rm -f /tmp/INST$$[abc]
 echo $(date) Done.
 logger -s [0%] ONAP VM is running. 2>> $STATUSFILE
-echo "1" > STATUSCODE
+echo "1" > $STATUSCODE
 exit 0
