@@ -21,6 +21,6 @@
 #
 
 
-scp -r src root@$1:/opt
+scp -r * root@$1:/opt
 echo $?
 exit 0
