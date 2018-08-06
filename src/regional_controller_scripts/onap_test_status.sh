@@ -29,7 +29,7 @@ PID=$(pgrep INSTALL.sh)
 
 
 
-if [[ -z $PID ]];then
+if [ -z $PID ];then
 
 	if [ $STATUS -eq 1 ];then
 		echo ONAP Deployment Complete
