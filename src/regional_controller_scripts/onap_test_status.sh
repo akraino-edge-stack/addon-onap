@@ -19,7 +19,7 @@
 #
 #       onap_test_status.sh - poll ONAP add-on deployment status info
 #
-IDIR=$(pwd)
+IDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 STATUSCODE=$IDIR/status-code
 
 STATUS=$(cat $STATUSCODE)
