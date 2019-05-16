@@ -160,7 +160,6 @@ resources:
 
   # OS::project_id Supported as of Kilo
   # network Supported as of Juno
-  # neutron subnet-create connexus 135.25.50.128/25 --name connexus-net --allocation-pool start=135.25.50.137,end=135.25.50.167 --dns-nameserver 135.37.9.16 --gateway 135.25.50.136
   public_subnet:
     type: OS::Neutron::Subnet
     condition: create_subnet
@@ -324,31 +323,3 @@ resources:
   #     cores: 80
   #     instances: 20
   #     ram: 200000
-
-  # Unsupported as of Pike
-  # openstack image create --file ubuntu14_04.qcow2 --disk-format qcow2 --container-format bare --public ubuntu14_04
-  # openstack image create --file ubuntu16_04.qcow2 --disk-format qcow2 --container-format bare --public ubuntu16_04
-  # openstack image create --file CentOS-7-x86_64-GenericCloud.qcow2 --disk-format qcow2 --container-format bare --public centos7
-  
-  #Supported as of Icehouse
-  # This must be done as the onap user
-  # for port in 22 30211 and ICMP
-  # do
-  #   openstack security group rule create $DEFAULT_SECGROUP --ingress --protocol tcp --remote-ip 0.0.0.0/0 --dst-port $port:$port
-  # done
-  #server_security_group:
-  #  type: OS::Neutron::SecurityGroup
-  #  properties:
-  #    description: security group and rules for ONAP user
-  #    name: onap
-  #    rules: [
-  #      {remote_ip_prefix: 0.0.0.0/0,
-  #      protocol: tcp,
-  #      port_range_min: 22,
-  #      port_range_max: 22},
-  #      {remote_ip_prefix: 0.0.0.0/0,
-  #      protocol: tcp,
-  #      port_range_min: 30211,
-  #      port_range_max: 30211},
-  #      {remote_ip_prefix: 0.0.0.0/0,
-  #      protocol: icmp}]
