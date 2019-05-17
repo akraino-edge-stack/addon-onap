@@ -153,8 +153,19 @@ echo "  openstack_service_tenant_name: service" >> $ENVFILE
 echo "  dmmap_topic_mode: AUTO" >> $ENVFILE
 echo "  demo_artifacts_version: 1.1.1-SNAPSHOT" >> $ENVFILE
 
-grep onap_vm_public_key $IDIR/parameters.env >> $ENVFILE
 grep flavor_name $IDIR/parameters.env >> $ENVFILE
+
+onap_vm_public_key=$(grep onap_vm_public_key $IDIR/parameters.env | awk '{print $2}')
+if [ -z $onap_vm_public_key ]; then
+    if [ ! -f $HOME/.ssh/id_rsa.pub ]; then
+        echo "Creating RSA key..."
+        ssh-keygen -t rsa -f $HOME/.ssh/id_rsa -P ""
+    fi
+    onap_vm_public_key=$(cat $HOME/.ssh/id_rsa.pub)
+    echo "  onap_vm_public_key:  \"$onap_vm_public_key\"" >> $ENVFILE
+else
+    grep onap_vm_public_key $IDIR/parameters.env >> $ENVFILE
+fi
 
 http_proxy=$(grep http_proxy $IDIR/parameters.env | awk '{print $2}')
 if [ -z $http_proxy ]; then
