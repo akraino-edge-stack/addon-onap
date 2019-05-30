@@ -221,7 +221,10 @@ resources:
 
           template: |
             #!/bin/bash
-
+            MYLOGFILE="install-onap-`date +%FT%H-%M-%S-%2N`.log"
+            exec 1> >(tee -a "/root/$MYLOGFILE") 2>&1
+            echo "userdata started on hostname: $(uname -n) at" `date`
+            STARTTIME=$(date +%s)
 
             # Create configuration files
             mkdir -p /opt/config
@@ -248,14 +251,19 @@ resources:
             echo "__dmmap_topic_mode__" > /opt/config/dmmap_topic_mode.txt
             echo "__demo_artifacts_version__" > /opt/config/demo_artifacts_version.txt
             echo "__onap_repo__" > /opt/config/onap_repo.txt
-
+            
             mkdir -p /opt/onap
-
+            
             # Download the newest ONAP VM deployment scripts
-            ARTIFACT_PATH="https://nexus.akraino.org/service/local/artifact/maven/redirect?r=snapshots&g=org.akraino.addon-onap&a=onap-amsterdam-VM-master&v=1.0.0-SNAPSHOT&e=tgz"
+            ARTIFACT_PATH="https://nexus.akraino.org/service/local/artifact/maven/redirect?r=snapshots&g=org.akraino.addon-onap&a=onap-amsterdam-VM-master&v=0.0.2-SNAPSHOT&e=tgz"
             cd /opt/onap
             curl -L $ARTIFACT_PATH > onap.tgz
             tar -xvf *.tgz
-
+            
             chmod +x INSTALL.sh
             ./INSTALL.sh
+            
+            ENDTIME=$(date +%s)
+            echo "userdata finished on hostname: $(uname -n) at" `date`
+            echo "userdata elapsed time was $(( ($ENDTIME - $STARTTIME) / 60 )) minutes and $(( ($ENDTIME - $STARTTIME) % 60 )) seconds"
+
