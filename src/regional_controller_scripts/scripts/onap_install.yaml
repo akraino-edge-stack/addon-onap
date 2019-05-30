@@ -255,7 +255,7 @@ resources:
             mkdir -p /opt/onap
             
             # Download the newest ONAP VM deployment scripts
-            ARTIFACT_PATH="https://nexus.akraino.org/service/local/artifact/maven/redirect?r=snapshots&g=org.akraino.addon-onap&a=onap-amsterdam-VM-master&v=0.0.2-SNAPSHOT&e=tgz"
+            ARTIFACT_PATH="https://nexus.akraino.org/service/local/artifact/maven/redirect?r=snapshots&g=org.akraino.addon-onap&a=onap-amsterdam-VM-master&v=1.0.1-SNAPSHOT&e=tgz"
             cd /opt/onap
             curl -L $ARTIFACT_PATH > onap.tgz
             tar -xvf *.tgz
