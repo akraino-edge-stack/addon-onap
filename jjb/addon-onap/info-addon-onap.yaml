@@ -1,0 +1,8 @@
+---
+- project:
+    name: addon-onap-info
+    project-name: addon-onap
+    jobs:
+      - gerrit-info-yaml-verify
+    project: addon-onap
+    branch: master
